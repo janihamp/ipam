@@ -1,0 +1,52 @@
+# =============================================================================
+# Azure IPAM API - Production Dockerfile
+# Multi-stage build for Azure Functions Node.js runtime
+# =============================================================================
+# Build from repo root: docker build -f deploy/docker/Dockerfile.api -t azure-ipam-api .
+# =============================================================================
+
+# Stage 1: Build
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY api/package*.json ./
+
+# Install all dependencies (including devDependencies for build)
+RUN npm ci
+
+# Copy source code
+COPY api/ .
+
+# Build TypeScript
+RUN npm run build
+
+# Stage 2: Production
+FROM mcr.microsoft.com/azure-functions/node:4-node20-slim AS production
+
+WORKDIR /home/site/wwwroot
+
+# Copy package files from builder
+COPY --from=builder /app/package*.json ./
+
+# Install production dependencies only
+RUN npm ci --only=production
+
+# Copy built files from builder
+COPY --from=builder /app/dist ./dist
+
+# Copy Azure Functions configuration files
+COPY --from=builder /app/host.json ./
+
+# Environment variables
+ENV AzureWebJobsScriptRoot=/home/site/wwwroot
+ENV AzureFunctionsJobHost__Logging__Console__IsEnabled=true
+ENV FUNCTIONS_WORKER_RUNTIME=node
+
+# Expose Functions port
+EXPOSE 7071
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:7071/api/health || exit 1

@@ -1,0 +1,10 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "AZURE_TENANT_ID": "f7bf667e-1be9-4c56-8c56-4791507b0804",
+    "AZURE_CLIENT_ID": "c2e38cd9-86a8-4da8-9927-d3563b28a503",
+    "AZURE_CLIENT_SECRET": "xdD8Q~NKz3WOBgQVNe6uHQLbDgIiyu2J05vZNdoC"
+  }
+}

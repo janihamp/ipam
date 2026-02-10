@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # Azure Functions API
+  api:
+    build:
+      context: ../../api
+      dockerfile: ../deploy/local/Dockerfile.api
+    ports:
+      - "7071:7071"
+    environment:
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID}
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET}
+      - AzureWebJobsStorage=UseDevelopmentStorage=true
+      - FUNCTIONS_WORKER_RUNTIME=node
+    volumes:
+      - ../../api/src:/app/src:ro
+    networks:
+      - ipam-network
+
+  # React Frontend
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: ../deploy/local/Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_AZURE_TENANT_ID=${VITE_AZURE_TENANT_ID}
+      - VITE_AZURE_CLIENT_ID=${VITE_AZURE_CLIENT_ID}
+      - VITE_API_BASE_URL=http://localhost:7071/api
+    volumes:
+      - ../../frontend/src:/app/src:ro
+    depends_on:
+      - api
+    networks:
+      - ipam-network
+
+  # Azurite (Azure Storage Emulator) for Functions runtime
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+    networks:
+      - ipam-network
+
+networks:
+  ipam-network:
+    driver: bridge

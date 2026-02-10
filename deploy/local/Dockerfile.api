@@ -1,0 +1,20 @@
+# Azure Functions API Dockerfile
+FROM mcr.microsoft.com/azure-functions/node:4-node18
+
+WORKDIR /app
+
+# Install dependencies
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Copy source code
+COPY . .
+
+# Build TypeScript
+RUN npm run build
+
+# Expose Functions port
+EXPOSE 7071
+
+# Start Functions runtime
+CMD ["npm", "start"]

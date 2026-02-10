@@ -1,0 +1,34 @@
+# =============================================================================
+# AKS-specific Kustomize overlay
+# Extends base Kubernetes manifests with Azure-specific configurations
+# =============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../kubernetes/base
+  - secret-provider-class.yaml
+
+namespace: azure-ipam
+
+# Patch deployments to use Key Vault secrets via CSI driver
+patches:
+  - path: patches/api-deployment-patch.yaml
+  - path: patches/frontend-deployment-patch.yaml
+  - path: patches/ingress-agic-patch.yaml
+
+# Update image references to your ACR
+# Replace <your-acr-name> with your actual ACR name
+images:
+  - name: azure-ipam-api
+    newName: <your-acr-name>.azurecr.io/azure-ipam-api
+    newTag: latest
+  - name: azure-ipam-frontend
+    newName: <your-acr-name>.azurecr.io/azure-ipam-frontend
+    newTag: latest
+
+labels:
+  - pairs:
+      environment: production
+      platform: azure-aks
+    includeSelectors: false

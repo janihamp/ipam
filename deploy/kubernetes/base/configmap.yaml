@@ -1,0 +1,23 @@
+# =============================================================================
+# Azure IPAM - ConfigMap
+# Non-sensitive configuration for the application
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: azure-ipam-config
+  namespace: azure-ipam
+  labels:
+    app.kubernetes.io/name: azure-ipam
+    app.kubernetes.io/component: config
+data:
+  # Azure Functions runtime settings
+  FUNCTIONS_WORKER_RUNTIME: "node"
+  AzureWebJobsScriptRoot: "/home/site/wwwroot"
+  
+  # Frontend configuration
+  VITE_API_BASE_URL: "/api"
+  
+  # Optional: Comma-separated subscription IDs to filter
+  # Leave empty to query all accessible subscriptions
+  AZURE_SUBSCRIPTION_IDS: ""

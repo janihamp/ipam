@@ -1,0 +1,28 @@
+{
+  "name": "azure-ipam-api",
+  "version": "1.0.0",
+  "description": "Azure IPAM API using Azure Functions",
+  "main": "dist/src/functions/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "start": "func start",
+    "prestart": "npm run build",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@azure/arm-network": "^33.0.0",
+    "@azure/arm-resources": "^5.2.0",
+    "@azure/arm-resourcegraph": "^4.2.1",
+    "@azure/arm-subscriptions": "^5.1.0",
+    "@azure/identity": "^4.0.1",
+    "@azure/functions": "^4.3.0",
+    "ip-address": "^9.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.x",
+    "typescript": "^5.3.3",
+    "azure-functions-core-tools": "^4.x"
+  }
+}

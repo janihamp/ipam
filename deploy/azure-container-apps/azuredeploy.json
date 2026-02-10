@@ -1,0 +1,464 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "azure-ipam",
+      "version": "1.0.0"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    },
+    "appName": {
+      "type": "string",
+      "defaultValue": "azure-ipam",
+      "minLength": 3,
+      "maxLength": 20,
+      "metadata": {
+        "description": "Base name for all resources (3-20 characters)"
+      }
+    },
+    "frontendClientId": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure AD App Registration Client ID for frontend authentication. Create one at: Azure Portal > App Registrations > New Registration (Single-page application)"
+      }
+    },
+    "createCustomRole": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Create the IPAM Reader custom role (requires Owner or User Access Administrator permissions)"
+      }
+    },
+    "repoUrl": {
+      "type": "string",
+      "defaultValue": "https://github.com/benarch/Azure-IPAM.git",
+      "metadata": {
+        "description": "GitHub repository URL for source code"
+      }
+    },
+    "repoBranch": {
+      "type": "string",
+      "defaultValue": "main",
+      "metadata": {
+        "description": "Branch to deploy from"
+      }
+    }
+  },
+  "variables": {
+    "uniqueSuffix": "[uniqueString(resourceGroup().id)]",
+    "logAnalyticsName": "[concat('log-', parameters('appName'), '-', variables('uniqueSuffix'))]",
+    "containerAppEnvName": "[concat('cae-', parameters('appName'))]",
+    "apiAppName": "[concat('ca-', parameters('appName'), '-api')]",
+    "frontendAppName": "[concat('ca-', parameters('appName'), '-fe')]",
+    "managedIdentityName": "[concat('id-', parameters('appName'))]",
+    "acrName": "[concat('acr', replace(parameters('appName'), '-', ''), variables('uniqueSuffix'))]",
+    "apiImageName": "[concat(variables('acrName'), '.azurecr.io/azure-ipam-api:latest')]",
+    "frontendImageName": "[concat(variables('acrName'), '.azurecr.io/azure-ipam-frontend:latest')]",
+    "ipamReaderRoleId": "[guid(subscription().id, 'ipam-reader-role', variables('uniqueSuffix'))]",
+    "tenantId": "[subscription().tenantId]",
+    "contributorRoleId": "b24988ac-6180-42a0-ab88-20f7382dd24c",
+    "acrPullRoleId": "7f951dda-4ed3-4680-a7ca-43fe172d538d",
+    "acrPushRoleId": "8311e382-0749-4cb8-b61a-304f252e45ec"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2023-01-31",
+      "name": "[variables('managedIdentityName')]",
+      "location": "[parameters('location')]"
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2022-10-01",
+      "name": "[variables('logAnalyticsName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 30
+      }
+    },
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2023-07-01",
+      "name": "[variables('acrName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Basic"
+      },
+      "properties": {
+        "adminUserEnabled": true
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceId('Microsoft.ContainerRegistry/registries', variables('acrName')), variables('managedIdentityName'), 'acrpush')]",
+      "scope": "[concat('Microsoft.ContainerRegistry/registries/', variables('acrName'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('acrPushRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))).principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerRegistry/registries', variables('acrName'))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceId('Microsoft.ContainerRegistry/registries', variables('acrName')), variables('managedIdentityName'), 'acrpull')]",
+      "scope": "[concat('Microsoft.ContainerRegistry/registries/', variables('acrName'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('acrPullRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))).principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerRegistry/registries', variables('acrName'))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceGroup().id, variables('managedIdentityName'), 'contributor')]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('contributorRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))).principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.App/managedEnvironments",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('containerAppEnvName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "appLogsConfiguration": {
+          "destination": "log-analytics",
+          "logAnalyticsConfiguration": {
+            "customerId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName'))).customerId]",
+            "sharedKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName')), '2022-10-01').primarySharedKey]"
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deploymentScripts",
+      "apiVersion": "2023-08-01",
+      "name": "buildContainerImages",
+      "location": "[parameters('location')]",
+      "kind": "AzureCLI",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]": {}
+        }
+      },
+      "properties": {
+        "azCliVersion": "2.50.0",
+        "timeout": "PT30M",
+        "retentionInterval": "PT1H",
+        "cleanupPreference": "OnSuccess",
+        "environmentVariables": [
+          {
+            "name": "ACR_NAME",
+            "value": "[variables('acrName')]"
+          },
+          {
+            "name": "REPO_URL",
+            "value": "[parameters('repoUrl')]"
+          },
+          {
+            "name": "REPO_BRANCH",
+            "value": "[parameters('repoBranch')]"
+          },
+          {
+            "name": "TENANT_ID",
+            "value": "[variables('tenantId')]"
+          },
+          {
+            "name": "FRONTEND_CLIENT_ID",
+            "value": "[parameters('frontendClientId')]"
+          }
+        ],
+        "scriptContent": "#!/bin/bash\nset -e\n\necho \"=== Building API image using ACR Tasks ===\"\naz acr build \\\n  --registry $ACR_NAME \\\n  --image azure-ipam-api:latest \\\n  --file deploy/docker/Dockerfile.api \\\n  $REPO_URL#$REPO_BRANCH\n\necho \"=== Building Frontend image using ACR Tasks ===\"\naz acr build \\\n  --registry $ACR_NAME \\\n  --image azure-ipam-frontend:latest \\\n  --file deploy/docker/Dockerfile.frontend \\\n  --build-arg VITE_AZURE_TENANT_ID=$TENANT_ID \\\n  --build-arg VITE_AZURE_CLIENT_ID=$FRONTEND_CLIENT_ID \\\n  --build-arg VITE_API_BASE_URL=/api \\\n  $REPO_URL#$REPO_BRANCH\n\necho \"=== Container images built successfully! ===\"\n"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerRegistry/registries', variables('acrName'))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]",
+        "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceId('Microsoft.ContainerRegistry/registries', variables('acrName')), variables('managedIdentityName'), 'acrpush'))]",
+        "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, variables('managedIdentityName'), 'contributor'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('createCustomRole')]",
+      "type": "Microsoft.Authorization/roleDefinitions",
+      "apiVersion": "2022-04-01",
+      "name": "[variables('ipamReaderRoleId')]",
+      "properties": {
+        "roleName": "[concat('IPAM Reader - ', variables('uniqueSuffix'))]",
+        "description": "Read-only access for Azure IP Address Management tool",
+        "type": "CustomRole",
+        "permissions": [
+          {
+            "actions": [
+              "Microsoft.Network/publicIPAddresses/read",
+              "Microsoft.Network/virtualNetworks/read",
+              "Microsoft.Network/virtualNetworks/subnets/read",
+              "Microsoft.Network/networkInterfaces/read",
+              "Microsoft.Network/loadBalancers/read",
+              "Microsoft.Network/applicationGateways/read",
+              "Microsoft.Network/privateLinkServices/read",
+              "Microsoft.Network/privateEndpoints/read",
+              "Microsoft.Network/natGateways/read",
+              "Microsoft.Network/firewallPolicies/read",
+              "Microsoft.Network/bastionHosts/read",
+              "Microsoft.Compute/virtualMachines/read",
+              "Microsoft.Resources/subscriptions/read",
+              "Microsoft.Resources/subscriptions/resourceGroups/read",
+              "Microsoft.Insights/eventtypes/values/read",
+              "Microsoft.ResourceGraph/resources/read"
+            ],
+            "notActions": [],
+            "dataActions": [],
+            "notDataActions": []
+          }
+        ],
+        "assignableScopes": [
+          "[subscription().id]"
+        ]
+      }
+    },
+    {
+      "condition": "[parameters('createCustomRole')]",
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(subscription().id, variables('managedIdentityName'), 'ipam-reader')]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('ipamReaderRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))).principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]",
+        "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('ipamReaderRoleId'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.App/containerApps",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('apiAppName')]",
+      "location": "[parameters('location')]",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]": {}
+        }
+      },
+      "properties": {
+        "managedEnvironmentId": "[resourceId('Microsoft.App/managedEnvironments', variables('containerAppEnvName'))]",
+        "configuration": {
+          "activeRevisionsMode": "Single",
+          "ingress": {
+            "external": true,
+            "targetPort": 7071,
+            "allowInsecure": false,
+            "traffic": [
+              {
+                "latestRevision": true,
+                "weight": 100
+              }
+            ],
+            "corsPolicy": {
+              "allowedOrigins": ["*"],
+              "allowedMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+              "allowedHeaders": ["*"],
+              "allowCredentials": false
+            }
+          },
+          "registries": [
+            {
+              "server": "[concat(variables('acrName'), '.azurecr.io')]",
+              "identity": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]"
+            }
+          ]
+        },
+        "template": {
+          "containers": [
+            {
+              "name": "api",
+              "image": "[variables('apiImageName')]",
+              "resources": {
+                "cpu": 0.5,
+                "memory": "1Gi"
+              },
+              "env": [
+                {
+                  "name": "AZURE_TENANT_ID",
+                  "value": "[variables('tenantId')]"
+                },
+                {
+                  "name": "AZURE_CLIENT_ID",
+                  "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))).clientId]"
+                },
+                {
+                  "name": "FUNCTIONS_WORKER_RUNTIME",
+                  "value": "node"
+                },
+                {
+                  "name": "AzureWebJobsStorage",
+                  "value": "UseDevelopmentStorage=true"
+                }
+              ]
+            }
+          ],
+          "scale": {
+            "minReplicas": 1,
+            "maxReplicas": 3,
+            "rules": [
+              {
+                "name": "http-scaling",
+                "http": {
+                  "metadata": {
+                    "concurrentRequests": "50"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.App/managedEnvironments', variables('containerAppEnvName'))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]",
+        "[resourceId('Microsoft.Resources/deploymentScripts', 'buildContainerImages')]",
+        "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceId('Microsoft.ContainerRegistry/registries', variables('acrName')), variables('managedIdentityName'), 'acrpull'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.App/containerApps",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('frontendAppName')]",
+      "location": "[parameters('location')]",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]": {}
+        }
+      },
+      "properties": {
+        "managedEnvironmentId": "[resourceId('Microsoft.App/managedEnvironments', variables('containerAppEnvName'))]",
+        "configuration": {
+          "activeRevisionsMode": "Single",
+          "ingress": {
+            "external": true,
+            "targetPort": 8080,
+            "allowInsecure": false,
+            "traffic": [
+              {
+                "latestRevision": true,
+                "weight": 100
+              }
+            ]
+          },
+          "registries": [
+            {
+              "server": "[concat(variables('acrName'), '.azurecr.io')]",
+              "identity": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]"
+            }
+          ]
+        },
+        "template": {
+          "containers": [
+            {
+              "name": "frontend",
+              "image": "[variables('frontendImageName')]",
+              "resources": {
+                "cpu": 0.25,
+                "memory": "0.5Gi"
+              },
+              "env": [
+                {
+                  "name": "API_URL",
+                  "value": "[concat('https://', variables('apiAppName'), '.', reference(resourceId('Microsoft.App/managedEnvironments', variables('containerAppEnvName'))).defaultDomain)]"
+                },
+                {
+                  "name": "VITE_AZURE_TENANT_ID",
+                  "value": "[variables('tenantId')]"
+                },
+                {
+                  "name": "VITE_AZURE_CLIENT_ID",
+                  "value": "[parameters('frontendClientId')]"
+                },
+                {
+                  "name": "VITE_API_BASE_URL",
+                  "value": "[concat('https://', variables('apiAppName'), '.', reference(resourceId('Microsoft.App/managedEnvironments', variables('containerAppEnvName'))).defaultDomain)]"
+                }
+              ]
+            }
+          ],
+          "scale": {
+            "minReplicas": 1,
+            "maxReplicas": 3,
+            "rules": [
+              {
+                "name": "http-scaling",
+                "http": {
+                  "metadata": {
+                    "concurrentRequests": "100"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.App/managedEnvironments', variables('containerAppEnvName'))]",
+        "[resourceId('Microsoft.App/containerApps', variables('apiAppName'))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))]",
+        "[resourceId('Microsoft.Resources/deploymentScripts', 'buildContainerImages')]"
+      ]
+    }
+  ],
+  "outputs": {
+    "frontendUrl": {
+      "type": "string",
+      "value": "[concat('https://', reference(resourceId('Microsoft.App/containerApps', variables('frontendAppName'))).configuration.ingress.fqdn)]"
+    },
+    "apiUrl": {
+      "type": "string",
+      "value": "[concat('https://', reference(resourceId('Microsoft.App/containerApps', variables('apiAppName'))).configuration.ingress.fqdn)]"
+    },
+    "managedIdentityClientId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))).clientId]"
+    },
+    "managedIdentityPrincipalId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('managedIdentityName'))).principalId]"
+    },
+    "nextSteps": {
+      "type": "string",
+      "value": "[concat('1. Go to Azure Portal > App Registrations > ', parameters('frontendClientId'), ' > Authentication. 2. Add redirect URI: https://', reference(resourceId('Microsoft.App/containerApps', variables('frontendAppName'))).configuration.ingress.fqdn, ' as Single-page application. 3. Access your IPAM dashboard at the Frontend URL above.')]"
+    }
+  }
+}

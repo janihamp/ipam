@@ -1,0 +1,39 @@
+# =============================================================================
+# Frontend Deployment Patch - Adds Key Vault CSI volume mount
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: azure-ipam-frontend
+  namespace: azure-ipam
+spec:
+  template:
+    spec:
+      containers:
+        - name: frontend
+          volumeMounts:
+            - name: secrets-store
+              mountPath: "/mnt/secrets-store"
+              readOnly: true
+          env:
+            - name: VITE_AZURE_TENANT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: azure-ipam-secrets
+                  key: VITE_AZURE_TENANT_ID
+            - name: VITE_AZURE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: azure-ipam-secrets
+                  key: VITE_AZURE_CLIENT_ID
+            - name: VITE_API_BASE_URL
+              value: "/api"
+            - name: API_URL
+              value: "http://azure-ipam-api:7071/api"
+      volumes:
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-ipam-keyvault"

@@ -1,0 +1,32 @@
+# =============================================================================
+# API Deployment Patch - Adds Key Vault CSI volume mount
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: azure-ipam-api
+  namespace: azure-ipam
+spec:
+  template:
+    spec:
+      containers:
+        - name: api
+          volumeMounts:
+            - name: secrets-store
+              mountPath: "/mnt/secrets-store"
+              readOnly: true
+          env:
+            - name: AzureWebJobsStorage
+              value: "UseDevelopmentStorage=true"
+          envFrom:
+            - configMapRef:
+                name: azure-ipam-config
+            - secretRef:
+                name: azure-ipam-secrets
+      volumes:
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-ipam-keyvault"

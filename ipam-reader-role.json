@@ -1,0 +1,28 @@
+{
+  "Name": "IPAM Reader",
+  "Description": "Read-only access for Azure IP Address Management tool",
+  "Actions": [
+    "Microsoft.Network/publicIPAddresses/read",
+    "Microsoft.Network/virtualNetworks/read",
+    "Microsoft.Network/virtualNetworks/subnets/read",
+    "Microsoft.Network/networkInterfaces/read",
+    "Microsoft.Network/loadBalancers/read",
+    "Microsoft.Network/applicationGateways/read",
+    "Microsoft.Network/privateLinkServices/read",
+    "Microsoft.Network/privateEndpoints/read",
+    "Microsoft.Network/natGateways/read",
+    "Microsoft.Network/firewallPolicies/read",
+    "Microsoft.Network/bastionHosts/read",
+    "Microsoft.Compute/virtualMachines/read",
+    "Microsoft.Resources/subscriptions/read",
+    "Microsoft.Resources/subscriptions/resourceGroups/read",
+    "Microsoft.Insights/eventtypes/values/read",
+    "Microsoft.ResourceGraph/resources/read"
+  ],
+  "NotActions": [],
+  "DataActions": [],
+  "NotDataActions": [],
+  "AssignableScopes": [
+    "/providers/Microsoft.Management/managementGroups/<YOUR-MANAGEMENT-GROUP-ID-OR-TENANT-ID>"
+  ]
+}

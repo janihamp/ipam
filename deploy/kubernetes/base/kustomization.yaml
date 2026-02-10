@@ -1,0 +1,34 @@
+# =============================================================================
+# Kustomize base configuration
+# =============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: azure-ipam
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret.yaml
+  - api-deployment.yaml
+  - frontend-deployment.yaml
+  - ingress.yaml
+  - hpa.yaml
+  - pdb.yaml
+  # Uncomment for enhanced security
+  # - network-policy.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: azure-ipam
+      app.kubernetes.io/version: "1.0.0"
+      app.kubernetes.io/managed-by: kustomize
+    includeSelectors: false
+
+images:
+  - name: azure-ipam-api
+    newName: azure-ipam-api
+    newTag: latest
+  - name: azure-ipam-frontend
+    newName: azure-ipam-frontend
+    newTag: latest

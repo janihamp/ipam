@@ -1,0 +1,10 @@
+# =============================================================================
+# Azure IPAM - Kubernetes Namespace
+# =============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: azure-ipam
+  labels:
+    app.kubernetes.io/name: azure-ipam
+    app.kubernetes.io/managed-by: kubectl

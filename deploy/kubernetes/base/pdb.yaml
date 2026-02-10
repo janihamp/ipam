@@ -1,0 +1,36 @@
+# =============================================================================
+# Azure IPAM - Pod Disruption Budget
+# Ensures minimum availability during updates and maintenance
+# =============================================================================
+
+# API PDB - Always keep at least 1 pod running
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: azure-ipam-api-pdb
+  namespace: azure-ipam
+  labels:
+    app.kubernetes.io/name: azure-ipam
+    app.kubernetes.io/component: api
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: azure-ipam
+      app.kubernetes.io/component: api
+---
+# Frontend PDB - Always keep at least 1 pod running
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: azure-ipam-frontend-pdb
+  namespace: azure-ipam
+  labels:
+    app.kubernetes.io/name: azure-ipam
+    app.kubernetes.io/component: frontend
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: azure-ipam
+      app.kubernetes.io/component: frontend

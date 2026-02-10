@@ -1,0 +1,90 @@
+# =============================================================================
+# Azure IPAM - Network Policy
+# Restricts network traffic between pods for security
+# =============================================================================
+
+# Deny all ingress by default
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: azure-ipam
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+# Allow ingress to frontend from ingress controller
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-ingress
+  namespace: azure-ipam
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: frontend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx  # Adjust for your ingress namespace
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+# Allow ingress to API from ingress controller and frontend pods
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-ingress
+  namespace: azure-ipam
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: api
+  policyTypes:
+    - Ingress
+  ingress:
+    # From ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 7071
+    # From frontend pods
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: frontend
+      ports:
+        - protocol: TCP
+          port: 7071
+---
+# Allow egress for API to Azure services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-egress
+  namespace: azure-ipam
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: api
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS
+    - to: []
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow HTTPS to Azure APIs
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443

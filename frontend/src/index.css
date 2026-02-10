@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #213547;
+  background-color: #f8fafc;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Pie chart colors for light mode */
+  --pie-label-color: #475569;
+  --pie-line-color: #94a3b8;
+  --pie-stroke-color: #e2e8f0;
+  --tooltip-bg: #ffffff;
+  --tooltip-border: #e2e8f0;
+  --tooltip-text: #1f2937;
+  --tooltip-subtext: #6b7280;
+}
+
+.dark {
+  color: #e2e8f0;
+  background-color: #0f172a;
+  
+  /* Pie chart colors for dark mode */
+  --pie-label-color: #94a3b8;
+  --pie-line-color: #475569;
+  --pie-stroke-color: #1f2937;
+  --tooltip-bg: #1f2937;
+  --tooltip-border: #374151;
+  --tooltip-text: #f3f4f6;
+  --tooltip-subtext: #9ca3af;
+}
+
+/* AG Grid customizations */
+.ag-theme-alpine {
+  --ag-header-background-color: #f1f5f9;
+  --ag-odd-row-background-color: #fafafa;
+  --ag-row-hover-color: #e0f2fe;
+  --ag-selected-row-background-color: #bae6fd;
+}
+
+.dark .ag-theme-alpine {
+  --ag-background-color: #1e293b;
+  --ag-header-background-color: #334155;
+  --ag-odd-row-background-color: #1e293b;
+  --ag-row-hover-color: #334155;
+  --ag-selected-row-background-color: #475569;
+  --ag-foreground-color: #e2e8f0;
+  --ag-border-color: #475569;
+}
+
+/* Utilization bar colors */
+.utilization-bar {
+  @apply h-4 rounded-full overflow-hidden bg-gray-200;
+}
+
+.utilization-fill {
+  @apply h-full rounded-full transition-all duration-300;
+}
+
+.utilization-green {
+  @apply bg-green-500;
+}
+
+.utilization-amber {
+  @apply bg-amber-500;
+}
+
+.utilization-red {
+  @apply bg-red-500;
+}
+
+/* Tab styling */
+.tab-active {
+  @apply border-b-2 border-azure-500 text-azure-600 font-semibold;
+}
+
+.tab-inactive {
+  @apply text-gray-500 hover:text-gray-700 hover:border-gray-300;
+}
+
+/* Conflict card */
+.conflict-card {
+  @apply border-l-4 border-amber-500 bg-amber-50 p-4 rounded-r-lg;
+}
+
+.conflict-card-severe {
+  @apply border-l-4 border-red-500 bg-red-50 p-4 rounded-r-lg;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 200ms;
+  transition-timing-function: ease-in-out;
+}
+
+/* Pie chart label styling */
+.pie-label {
+  fill: var(--pie-label-color);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Custom tooltip for recharts */
+.recharts-tooltip {
+  background-color: var(--tooltip-bg) !important;
+  border-color: var(--tooltip-border) !important;
+}

@@ -1,0 +1,29 @@
+# =============================================================================
+# Ingress Patch - Azure Application Gateway Ingress Controller (AGIC)
+# =============================================================================
+# Use this patch if you're using AGIC instead of nginx-ingress
+# Uncomment the AGIC-specific annotations and comment out nginx ones
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: azure-ipam-ingress
+  namespace: azure-ipam
+  annotations:
+    # === NGINX Ingress (default) ===
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    
+    # === Azure Application Gateway Ingress Controller (uncomment to use) ===
+    # kubernetes.io/ingress.class: azure/application-gateway
+    # appgw.ingress.kubernetes.io/ssl-redirect: "true"
+    # appgw.ingress.kubernetes.io/connection-draining: "true"
+    # appgw.ingress.kubernetes.io/connection-draining-timeout: "30"
+    # appgw.ingress.kubernetes.io/cookie-based-affinity: "true"
+    # appgw.ingress.kubernetes.io/request-timeout: "300"
+    # appgw.ingress.kubernetes.io/backend-protocol: "http"
+    
+    # === TLS with Azure Key Vault certificates ===
+    # appgw.ingress.kubernetes.io/appgw-ssl-certificate: "azure-ipam-cert"

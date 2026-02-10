@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "eastus"
+    },
+    "baseName": {
+      "value": "azure-ipam"
+    },
+    "nodeCount": {
+      "value": 2
+    },
+    "nodeVmSize": {
+      "value": "Standard_DS2_v2"
+    },
+    "enableAutoscaler": {
+      "value": true
+    },
+    "minNodeCount": {
+      "value": 1
+    },
+    "maxNodeCount": {
+      "value": 5
+    }
+  }
+}
