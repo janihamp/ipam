@@ -4,7 +4,7 @@ export default function Footer() {
   const currentYear = new Date().getFullYear()
   
   const openFeedback = () => {
-    window.open('https://github.com/benarch/Azure-IPAM/issues/new?template=feature_request.md', '_blank')
+    window.open('https://github.com/janihamp/ipam.git', '_blank')
   }
 
   return (
@@ -16,7 +16,7 @@ export default function Footer() {
         
         <div className="flex items-center gap-6">
           <a
-            href="https://github.com/benarch/Azure-IPAM"
+            href="https://github.com/janihamp/ipam.git"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-azure-600 dark:hover:text-azure-400 transition-colors"
@@ -25,7 +25,7 @@ export default function Footer() {
             Product
           </a>
           <a
-            href="https://linkedin.com/in/bendali"
+            href="https://linkedin.com"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-azure-600 dark:hover:text-azure-400 transition-colors"

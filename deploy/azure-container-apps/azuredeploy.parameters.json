@@ -15,7 +15,7 @@
       "value": true
     },
     "repoUrl": {
-      "value": "https://github.com/benarch/Azure-IPAM.git"
+      "value": "https://github.com/janihamp/ipam.git"
     },
     "repoBranch": {
       "value": "main"

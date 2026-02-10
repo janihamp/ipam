@@ -39,7 +39,7 @@
     },
     "repoUrl": {
       "type": "string",
-      "defaultValue": "https://github.com/benarch/Azure-IPAM.git",
+      "defaultValue": "https://github.com/janihamp/ipam.git",
       "metadata": {
         "description": "GitHub repository URL for source code"
       }
