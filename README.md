@@ -80,7 +80,7 @@ Click the **Deploy to Azure** button above, or use Azure CLI:
 
 ```bash
 # Create resource group
-az group create --name rg-azure-ipam --location eastus
+az group create --name rg-azure-ipam --location swedencentral
 
 # Deploy (requires App Registration - see deploy/azure-container-apps/README.md)
 az deployment group create \
